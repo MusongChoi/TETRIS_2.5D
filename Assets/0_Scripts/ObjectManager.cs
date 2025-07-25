@@ -27,6 +27,7 @@ public class ObjectManager : MonoBehaviour {
         for (int i = 0; i < 7; i++) {
             GameObject inst = Instantiate(minoPrefab, transform);
             inst.GetComponent<Mino>().SetShape(bag[i], new Vector3(4f, 100f, 0));
+            inst.name = "Mino_"+"IJLOSTZ"[bag[i]];
             minoBag.Add(inst);
         }
     }

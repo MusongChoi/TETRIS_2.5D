@@ -17,32 +17,31 @@ public class GameController : MonoBehaviour {
     const int fieldWidth = 10;
     const int fieldHeight = 30;
 
-
     int[,,] srsTable = { // JLTSZ
         { { -1,  0}, { -1,  1}, {  0, -2}, { -1, -2} }, // 0 > 1
-        { {  1,  0}, {  1, -1}, {  0,  2}, {  1,  2} }, // 1 > 0
+        { {  1,  0}, {  1,  1}, {  0, -2}, {  1, -2} }, // 0 > 3
 
         { {  1,  0}, {  1, -1}, {  0,  2}, {  1,  2} }, // 1 > 2
-        { { -1,  0}, { -1,  1}, {  0, -2}, { -1, -2} }, // 2 > 1
+        { {  1,  0}, {  1, -1}, {  0,  2}, {  1,  2} }, // 1 > 0
         
         { {  1,  0}, {  1,  1}, {  0, -2}, {  1, -2} }, // 2 > 3
-        { { -1,  0}, { -1, -1}, {  0,  2}, { -1,  2} }, // 3 > 2
+        { { -1,  0}, { -1,  1}, {  0, -2}, { -1, -2} }, // 2 > 1
 
         { { -1,  0}, { -1, -1}, {  0,  2}, { -1,  2} }, // 3 > 0
-        { {  1,  0}, {  1,  1}, {  0, -2}, {  1, -2} }  // 0 > 3
+        { { -1,  0}, { -1, -1}, {  0,  2}, { -1,  2} }  // 3 > 2
     };
     int[,,] srsTable2 = { // I
-        { { -2,  0}, {  1,  0}, {  0, -1}, { -1,  2} }, // 0 > 1
-        { {  2,  0}, { -1,  0}, {  2,  1}, { -1, -2} }, // 1 > 0
+        { { -2,  0}, {  1,  0}, { -2, -1}, {  1,  2} }, // 0 > 1
+        { { -1,  0}, {  2,  0}, { -1,  2}, {  2, -1} }, // 0 > 3
 
         { { -1,  0}, {  2,  0}, { -1,  2}, {  2, -1} }, // 1 > 2
-        { {  1,  0}, { -2,  0}, {  1, -2}, { -2,  1} }, // 2 > 1
+        { {  2,  0}, { -1,  0}, {  2,  1}, { -1, -2} }, // 1 > 0
         
         { {  2,  0}, { -1,  0}, {  2,  1}, { -1, -2} }, // 2 > 3
-        { { -2,  0}, {  1,  0}, { -2, -1}, {  1,  2} }, // 3 > 2
+        { {  1,  0}, { -2,  0}, {  1, -2}, { -2,  1} }, // 2 > 1
 
         { {  1,  0}, { -2,  0}, {  1, -2}, { -2,  1} }, // 3 > 0
-        { { -1,  0}, {  2,  0}, { -1,  2}, {  2, -1} }  // 0 > 3
+        { { -2,  0}, {  1,  0}, { -2, -1}, {  1,  2} }  // 3 > 2
     };
 
     GameObject curMino;
@@ -160,9 +159,18 @@ public class GameController : MonoBehaviour {
         }
 
 
-        // 위쪽 키 
-        if (Input.GetKeyDown(KeyCode.UpArrow)) {
-            CheckRotate();
+        // x 키 (시계방향회전) 
+        if (Input.GetKeyDown(KeyCode.X)) {
+            CheckRotate(1);
+            ghostMino.GetComponent<Mino>().r = curMino.GetComponent<Mino>().r;
+            ghostMino.transform.eulerAngles = curMino.transform.eulerAngles;
+        }
+
+        // z 키 (반시계방향회전)
+        if (Input.GetKeyDown(KeyCode.Z)) {
+            CheckRotate(-1);
+            ghostMino.GetComponent<Mino>().r = curMino.GetComponent<Mino>().r;
+            ghostMino.transform.eulerAngles = curMino.transform.eulerAngles;
         }
 
         camDPos *= 0.95f;
@@ -172,20 +180,21 @@ public class GameController : MonoBehaviour {
         MoveGhostMino();
     }
 
-    void CheckRotate() {
-        if (curMino.name == "Mino(Clone)O") return;
+    void CheckRotate(int dr) {
+        if (curMino.name == "Mino_O") return;
 
         int r = curMino.GetComponent<Mino>().r;
-        int nr = (r + 1) % 4;
+        int nr = (r + dr + 4) % 4;
+        int tmp = dr > 0 ? 0 : 1;
 
-        if (CheckMove(curMino, 0, 0, 1)) {
+        if (CheckMove(curMino, 0, 0, dr)) {
             curMino.GetComponent<Mino>().r = nr;
             return;
         }
 
-        if (curMino.name != "Mino(Clone)I") {
+        if (curMino.name != "Mino_I") {
             for (int i = 0; i < 4; i++) {
-                if (CheckMove(curMino, srsTable[r * 2, i, 0], srsTable[r * 2, i, 1], 1)) {
+                if (CheckMove(curMino, srsTable[r * 2 + tmp, i, 0], srsTable[r * 2 + tmp, i, 1], dr)) {
                     curMino.GetComponent<Mino>().r = nr;
                     return;
                 }
@@ -193,7 +202,7 @@ public class GameController : MonoBehaviour {
         }
         else {
             for (int i = 0; i < 4; i++) {
-                if (CheckMove(curMino, srsTable2[r * 2, i, 0], srsTable2[r * 2, i, 1], 1)) {
+                if (CheckMove(curMino, srsTable2[r * 2 + tmp, i, 0], srsTable2[r * 2 + tmp, i, 1], dr)) {
                     curMino.GetComponent<Mino>().r = nr;
                     return;
                 }
@@ -227,6 +236,7 @@ public class GameController : MonoBehaviour {
     void GetNewBlock() {
         curMino = objectManager.GetMino();
         ghostMino.GetComponent<Mino>().SetShape(curMino.GetComponent<Mino>().num, new Vector3(4f, 20f, 0), true);
+        ghostMino.transform.eulerAngles = Vector3.zero;
     }
 
     void LockBlock() {
@@ -283,7 +293,6 @@ public class GameController : MonoBehaviour {
 
     void MoveGhostMino() {
         ghostMino.transform.localPosition = curMino.transform.localPosition;
-        int r = curMino.GetComponent<Mino>().r;
-        while (CheckMove(ghostMino, 0, -1, r));
+        while (CheckMove(ghostMino, 0, -1, 0));
     }
 }
